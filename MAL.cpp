@@ -101,7 +101,7 @@ void ReservationTable::readtable()
 	fin.close();
 	vector<int> row;
 	for(i=1; i<=stages; i++)
-    {
+	{
 		multimap<int,int>::iterator it;
 		for(it=rtable.equal_range(i).first; it!=rtable.equal_range(i).second; ++it)
 		row.push_back((*it).second);
@@ -117,7 +117,7 @@ void ReservationTable::readtable()
 	stable_sort(forbidden.begin(),forbidden.end());
 	cout<<"\nForbidden latencies: ";
 	for (list<int>::iterator it=forbidden.begin(); it!=forbidden.end(); ++it)
-    cout<<" "<<*it;
+    		cout<<" "<<*it;
 	cout<<endl;
 }
 
