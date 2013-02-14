@@ -1,6 +1,3 @@
-// MAL.cpp : Defines the entry point for the console application.
-//
-#include "stdafx.h"
 #include <iostream>
 #include <fstream>
 #include <string>
@@ -54,10 +51,10 @@ public:
 class Cycle :public StateDiagram
 {
 	double mal;
-	list<list<int>> simplecycles;
-	list<list<int>> greedycycles;
-	void callsimple(header *node, list<bitset<MAX>> trav, list<int> cycle);
-	void callgreedy(header *node, list<bitset<MAX>> trav, list<int> cycle);
+	list<list<string>> simplecycles;
+	list<list<string>> greedycycles;
+	void callsimple(header *node, list<bitset<MAX>> trav, list<string> cycle);
+	void callgreedy(header *node, list<bitset<MAX>> trav, list<string> cycle);
 public:
 	void process();
 };
@@ -100,15 +97,16 @@ void ReservationTable::readtable()
 	}
 	fin.close();
 	vector<int> row;
+	multimap<int,int>::iterator it;
+	list<int>::iterator f;
 	for(i=1; i<=stages; i++)
     {
-		multimap<int,int>::iterator it;
 		for(it=rtable.equal_range(i).first; it!=rtable.equal_range(i).second; ++it)
 		row.push_back((*it).second);
 		for(size_t p=0; p<row.size(); ++p)
 		for(size_t q=p+1; q<row.size(); ++q)
 		{
-			list<int>::iterator f=find(forbidden.begin(),forbidden.end(),row[q]-row[p]);
+			f=find(forbidden.begin(),forbidden.end(),row[q]-row[p]);
 			if(f==forbidden.end())
 			forbidden.push_back(row[q]-row[p]);
 		}
@@ -238,13 +236,25 @@ void StateDiagram::buildsd()
 	cout<<endl;
 }
 
-void Cycle::callsimple(header *node, list<bitset<MAX>> trav,list<int> cycle)
+void Cycle::callsimple(header *node, list<bitset<MAX>> trav,list<string> cycle)
 {
 	list<bitset<MAX>>::iterator it;
+	list<int>::iterator i;
 	trav.push_back(node->bset);
+	string str;
 	for(edge *e=node->pedge; e; e=e->next)
 	{
-		cycle.push_back(e->weights.front());
+		str.clear();
+		i=e->weights.begin(); 
+		while(1)
+		{
+			str+=to_string(*i);
+			++i;
+			if(i!=e->weights.end())
+				str+=",";
+			else break;
+		}
+		cycle.push_back(str);
 		it=find(trav.begin(),trav.end(),e->to->bset);
 		if(it==trav.end())
 			callsimple(e->to,trav,cycle);
@@ -253,12 +263,12 @@ void Cycle::callsimple(header *node, list<bitset<MAX>> trav,list<int> cycle)
 		cycle.pop_back();
 	}
 }
-void Cycle::callgreedy(header *node, list<bitset<MAX>> trav,list<int> cycle)
+void Cycle::callgreedy(header *node, list<bitset<MAX>> trav,list<string> cycle)
 {
 	list<bitset<MAX>>::iterator it;
 	trav.push_back(node->bset);
 	edge *e=node->pedge;
-	cycle.push_back(e->weights.front());
+	cycle.push_back(to_string(e->weights.front()));
 	it=find(trav.begin(),trav.end(),e->to->bset);
 	if(it==trav.end())
 		callgreedy(e->to,trav,cycle);
@@ -269,7 +279,7 @@ void Cycle::callgreedy(header *node, list<bitset<MAX>> trav,list<int> cycle)
 void Cycle::process()
 {
 	list<bitset<MAX>> traversed;
-	list<int> cycle;
+	list<string> cycle;
 	for(header *ptr=start; ptr; ptr=ptr->next)
 	{
 		cycle.clear();
@@ -280,18 +290,19 @@ void Cycle::process()
 		callsimple(ptr,traversed,cycle);
 		callgreedy(ptr,traversed,cycle);
 	}
-	list<list<int>>::iterator it1;
-	list<int>::iterator it2;
+	list<list<string>>::iterator it1;
+	list<string>::iterator it2;
 	cout<<"\nSimple Cycles:"<<endl;
 	for(it1=simplecycles.begin(); it1!=simplecycles.end(); ++it1)
 	{
-		cout<<"(";
-		for(it2=(*it1).begin(); it2!=(*it1).end();)
+		cout<<"( ";
+		for(it2=(*it1).begin();;)
 		{
 			cout<<*it2;
-			if(++it2!=(*it1).end()) cout<<",";
+			if(++it2!=(*it1).end()) cout<<" -> ";
+			else break;
 		}
-		cout<<")"<<endl;
+		cout<<" )"<<endl;
 	}
 	double min;
 	mal=INT_MAX;
@@ -299,16 +310,17 @@ void Cycle::process()
 	for(it1=greedycycles.begin(); it1!=greedycycles.end(); ++it1)
 	{
 		min=0;
-		cout<<"(";
-		for(it2=(*it1).begin(); it2!=(*it1).end();)
+		cout<<"( ";
+		for(it2=(*it1).begin();;)
 		{
 			cout<<*it2;
-			min+=(*it2);
-			if(++it2!=(*it1).end()) cout<<",";
+			min+=stoi(*it2);
+			if(++it2!=(*it1).end()) cout<<" -> ";
+			else break;
 		}
 		min/=(*it1).size();
 		if(min<mal) mal=min;
-		cout<<")"<<endl;
+		cout<<" )"<<endl;
 	}
 	cout<<"\nMinimum Average Latency: "<<mal<<endl;
 }
